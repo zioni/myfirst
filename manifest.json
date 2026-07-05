@@ -1,0 +1,7 @@
+{
+  "name": "Italian App",
+  "short_name": "Italian",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#ffffff"
+}
