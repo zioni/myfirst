@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>איטלקית בכיף</title>
+    
+    <!-- הפיכת הדף לאפליקציית סלולר במסך מלא -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="איטלקית בכיף">
+    <meta name="mobile-web-app-capable" content="yes">
+    
+    <!-- הגדרות האפליקציה (PWA Manifest) מובנות בקוד -->    
+    <link rel="manifest" href="manifest.json">
+    <style>
+        :root { 
+            --primary: #009246; 
+            --secondary: #ce2b37; 
+            --bg: #f4f7f6; 
+        }
+        
+        body { 
+            font-family: sans-serif; 
+            background-color: var(--bg); 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            padding: 15px; 
+            box-sizing: border-box;
+            user-select: none; /* מונע סימון טקסט מעצבן בטלפון */
+            -webkit-user-select: none;
+        }
+
+        h1 {
+            margin-top: 10px;
+            margin-bottom: 5px;
+            font-size: 1.6rem;
+        }
+
+        #counter {
+            margin-bottom: 5px;
+            font-size: 1rem;
+            color: #555;
+        }
+
+        #save-status {
+            font-size: 0.85rem;
+            color: #009246;
+            margin-bottom: 15px;
+            height: 15px;
+            font-weight: bold;
+        }
+        
+        .card-container { 
+            width: 100%;
+            max-width: 350px; 
+            height: 300px; 
+            perspective: 1000px; 
+            cursor: pointer; 
+            margin-bottom: 25px; 
+            -webkit-tap-highlight-color: transparent; /* מונע הבהוב כחול בנגיעה */
+        }
+
+        .card { 
+            width: 100%; 
+            height: 100%; 
+            position: relative; 
+            transform-style: preserve-3d; 
+            transition: transform 0.4s; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15); 
+            border-radius: 15px; 
+        }
+
+        .card.flipped { transform: rotateY(180deg); }
+        
+        .card-face { 
+            position: absolute; 
+            width: 100%; 
+            height: 100%; 
+            backface-visibility: hidden; 
+            -webkit-backface-visibility: hidden;
+            border-radius: 15px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            padding: 15px; 
+            box-sizing: border-box;
+            background: white; 
+            border: 2px solid #ddd; 
+        }
+
+        .card-front { border-top: 8px solid var(--primary); }
+        .card-back { transform: rotateY(180deg); background: #fff5f5; border-top: 8px solid var(--secondary); }
+        
+        .word-it { font-size: 2.2rem; color: var(--primary); font-weight: bold; margin-bottom: 5px; text-align: center; }
+        .word-he { font-size: 1.6rem; font-weight: bold; text-align: center; }
+        .word-en { font-size: 1.1rem; color: #666; margin-top: 5px; font-style: italic; text-align: center; }
+        
+        .hint-box {
+            margin-top: 10px;
+            font-size: 0.95rem;
+            color: #555;
+            background: #fff9db;
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px dashed #f59f00;
+            display: none;
+            width: 90%;
+            text-align: center;
+        }
+
+        .example-box {
+            margin-top: 10px;
+            font-size: 0.92rem;
+            color: #333;
+            background: #eef7ff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px dashed #1971c2;
+            display: none;
+            width: 90%;
+            text-align: center;
+            line-height: 1.45;
+        }
+
+        .example-it {
+            direction: ltr;
+            font-weight: bold;
+            color: #006b35;
+            font-size: 1rem;
+        }
+
+        .example-he {
+            direction: rtl;
+            margin-top: 4px;
+        }
+
+        .example-actions {
+            display: flex;
+            justify-content: center;
+            margin-top: 7px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .controls { 
+            display: flex; 
+            gap: 12px; 
+            flex-wrap: wrap; 
+            justify-content: center; 
+            width: 100%;
+            max-width: 400px; 
+            padding: 10px 0;
+        }
+
+        button { 
+            padding: 12px 18px; 
+            cursor: pointer; 
+            border-radius: 8px; 
+            border: 1px solid #ccc; 
+            background: white; 
+            font-size: 1rem; 
+            font-weight: bold;
+            transition: transform 0.1s, background-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        button:active { transform: scale(0.95); }
+        
+        .btn-main { background: var(--primary); color: white; border: none; }
+        .btn-main:hover { background: #007d3c; }
+        
+        .btn-fail { border-color: var(--secondary); color: var(--secondary); background: #fff8f8; }
+        .btn-fail:hover { background: #ffebeb; }
+
+        .btn-action {
+            padding: 8px 14px;
+            font-size: 0.9rem;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+        }
+        
+        .btn-reset {
+            margin-top: 15px;
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            background: #eee;
+            color: #666;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+
+    <h1 id="app-title">מילים וביטויים באיטלקית</h1>
+    <div id="counter">מערכת בטעינה...</div>
+    <div id="save-status"></div>
+
+    <div class="card-container" onclick="toggleFlip()">
+        <div class="card" id="card">
+            <div class="card-face card-front">
+                <div class="word-it" dir="ltr" id="word-it"></div>
+                <div class="btn-group">
+                    <button class="btn-action" onclick="playAudio(event)">🔊 השמע</button>
+                    <button class="btn-action" style="background-color: #fff9db;" onclick="handleHint(event)">💡 רמז לזיכרון</button>
+                    <button class="btn-action" style="background-color: #eef7ff;" onclick="handleExample(event)">📝 דוגמה במשפט</button>
+                </div>
+                <div class="hint-box" id="hint-box"></div>
+                <div class="example-box" id="example-box"></div>
+            </div>
+            <div class="card-face card-back">
+                <div class="word-he" id="word-he"></div>
+                <div class="word-en" dir="ltr" id="word-en"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button onclick="prevCard()">◀ הקודם</button>
+        <button class="btn-main" onclick="toggleFlip()">הפוך קלף</button>
+        <button class="btn-fail" onclick="markAsForgot()">לא זכרתי 🔄</button>
+        <button onclick="nextCard()">הבא ▶</button>
+    </div>
+
+    <button class="btn-reset" onclick="resetApp()">איפוס וערבוב מחדש</button>
+    <div id="app-version" style="margin-top:8px;font-size:0.75rem;color:#777;">גרסה 3 — משפטים ידניים</div>
+
+    <script>
+        const APP_VERSION = "3.0";
+        const originalWordList = [
+            {it: "Ne prenda una", he: "קח/י אחת", en: "Take one"},
+{it: "Ne prendo una", he: "אקח אחת / אני לוקח/ת אחת", en: "I'll take one"},
+{it: "Che pane avete?", he: "איזה לחם יש לכם?", en: "What kind of bread do you have?"},
+{it: "Zuppa", he: "מרק", en: "Soup"},
+{it: "Abbiamo", he: "יש לנו", en: "We have"},
+{it: "Con", he: "עם", en: "With"},
+{it: "Patatine", he: "צ׳יפס / תפוחי אדמה מטוגנים", en: "French fries / Chips"},
+{it: "Aceto", he: "חומץ", en: "Vinegar"},
+{it: "Molte opzioni", he: "הרבה אפשרויות / אפשרויות רבות", en: "Many options"},
+{it: "Melanzana", he: "חציל", en: "Eggplant"},
+{it: "Zucchina", he: "קישוא", en: "Zucchini"},
+{it: "Che tipi?", he: "אילו סוגים?", en: "What kinds? / What types?"},
+{it: "Integrale", he: "מלא / מקמח מלא", en: "Whole wheat / Whole grain"},
+{it: "Multicereali", he: "רב־דגנים", en: "Multigrain"},
+{it: "Diversi", he: "שונים / מגוונים", en: "Different / Various"},
+{it: "Cereali", he: "דגנים", en: "Cereals / Grains"},
+{it: "È sano", he: "זה בריא", en: "It is healthy"},
+{it: "Prendo", he: "אני לוקח/ת / אקח", en: "I take / I'll take"},
+{it: "Ripieno", he: "ממולא / מילוי", en: "Stuffed / Filling"},
+{it: "Cipolle", he: "בצלים", en: "Onions"},
+{it: "Desidera", he: "רוצה / מה תרצה/י?", en: "Would you like? / Wants"},
+{it: "Poca", he: "מעט / מעטה", en: "Little / Not much"},
+{it: "Salse", he: "רטבים", en: "Sauces"},
+{it: "Senape", he: "חרדל", en: "Mustard"},
+{it: "Per quando?", he: "למתי? / עד מתי?", en: "For when? / By when?"},
+{it: "Tra un'ora", he: "בעוד שעה", en: "In an hour"},
+{it: "Tutti uguali", he: "כולם אותו דבר / כולם שווים", en: "All the same / All equal"},
+            {it: "Costoso", he: "יקר", en: "Expensive"},
+{it: "Abbastanza", he: "מספיק / די", en: "Enough / Quite"},
+{it: "Ragione", he: "סיבה / צדק", en: "Reason / Right"},
+{it: "Decidere", he: "להחליט", en: "To decide"},
+{it: "Odiano", he: "הם שונאים", en: "They hate"},
+{it: "E tanto", he: "והרבה / וכל כך הרבה", en: "And a lot / So much"},
+{it: "Costa meno", he: "עולה פחות", en: "It costs less"},
+{it: "La metà", he: "החצי", en: "Half"},
+{it: "Terra", he: "אדמה / ארץ / קרקע", en: "Earth / Land / Ground"},
+{it: "Pavimento", he: "רצפה / ריצוף", en: "Floor / Flooring"},
+{it: "Li provi?", he: "את/ה מודד/ת אותם? / תנסה/י אותם?", en: "Are you trying them on?"},
+{it: "Camerino", he: "תא מדידה", en: "Fitting room"},
+{it: "Fondo", he: "תחתית / עומק / רקע", en: "Bottom / Depth / Background"},
+{it: "Destra", he: "ימין", en: "Right"},
+{it: "Servono", he: "נחוצים / צריך אותם", en: "They are needed"},
+{it: "Sarebbe", he: "היה / הייתה / זה היה יכול להיות", en: "It would be"},
+{it: "Accetto", he: "אני מקבל/ת / מסכים/ה", en: "I accept"},
+{it: "Lascia", he: "עזוב/י / השאר/י", en: "Leave / Let"},
+{it: "Mi lascia un numero di telefono?", he: "את/ה יכול/ה להשאיר לי מספר טלפון?", en: "Can you leave me a phone number?"},
+{it: "La chiamo", he: "אני אתקשר אליך/אלייך / אליה", en: "I'll call you / her"},
+{it: "Dopo", he: "אחרי / אחר כך", en: "After / Later"},
+            {it: "Che bello vederti", he: "איזה כיף לראות אותך", en: "It's so nice to see you"},
+{it: "Anche per me", he: "גם בשבילי / גם מבחינתי", en: "For me too"},
+{it: "Tutto a posto", he: "הכול בסדר", en: "Everything is fine"},
+{it: "Fine settimana", he: "סוף שבוע", en: "Weekend"},
+{it: "Cos'hai fatto?", he: "מה עשית?", en: "What did you do?"},
+{it: "Niente di che", he: "שום דבר מיוחד", en: "Nothing special"},
+{it: "Il solito", he: "כרגיל / אותו דבר כרגיל", en: "The usual"},
+{it: "E poi?", he: "ואז? / ומה אחר כך?", en: "And then?"},
+{it: "Macché", he: "מה פתאום / ממש לא", en: "No way / Not at all"},
+{it: "Proprio così", he: "בדיוק כך", en: "Exactly"},
+{it: "Sei uscita?", he: "יצאת?", en: "Did you go out?"},
+{it: "E cosa avete visto?", he: "ומה ראיתם?", en: "And what did you see?"},
+            {it: "Gente", he: "אנשים", en: "People"},
+            {it: "Divertimento", he: "הנאה", en: "Fun"},
+            {it: "In bocca al lupo", he: "בהצלחה (לתוך פי הזאב)", en: "Good luck"},
+            {it: "Forchetta", he: "מזלג", en: "Fork"},
+            {it: "Zucchero", he: "סוכר", en: "Sugar"},
+            {it: "Dipendente", he: "עובד", en: "Employee", hook: "עוגן: מגיע מ-Dipendere (להיות תלוי). העובד השכיר שתלוי במנהל שלו."},
+            {it: "Che ore sono?", he: "מה השעה?", en: "What time is it?"},
+            {it: "Prego", he: "בבקשה בתגובה", en: "You are welcome"},
+            {it: "Ascolto", he: "הקשבה", en: "Listening"},
+            {it: "Dormire", he: "לישון", en: "To sleep"},
+            {it: "Inoltre", he: "בנוסף לכך / יתר על כן", en: "In addition / furthermore"},
+            {it: "Gatto", he: "חתול", en: "Cat"},
+            {it: "Tavolo", he: "שולחן", en: "Table"},
+            {it: "Nuvola", he: "ענן", en: "Cloud"},
+            {it: "Nipote (m)", he: "נכד", en: "Grandson"},
+            {it: "Non importa", he: "לא משנה / זה לא עקרוני", en: "It doesn't matter"},
+            {it: "Muro", he: "קיר", en: "Wall", hook: "עוגן: ציור קיר באנגלית זה Mural. או המנוע (Motor) תלוי על הקיר."},
+            {it: "Albero", he: "עץ", en: "Tree"},
+            {it: "Va bene", he: "בסדר / מסכים", en: "Alright / OK"},
+            {it: "Preoccupazione", he: "דאגה", en: "Worry"},
+            {it: "Allora", he: "אז / ובכן", en: "So / then"},
+            {it: "Meraviglioso", he: "נפלא / מדהים", en: "Wonderful"},
+            {it: "Frutta", he: "פירות", en: "Fruit"},
+            {it: "Non lo so", he: "אני לא יודע", en: "I don't know"},
+            {it: "Respiro", he: "נשימה", en: "Breath"},
+            {it: "Stanco", he: "עייף", en: "Tired"},
+            {it: "Cane", he: "כלב", en: "Dog"},
+            {it: "Tenda", he: "וילון", en: "Curtain"},
+            {it: "Scuola", he: "בית ספר", en: "School"},
+            {it: "Grazie", he: "תודה", en: "Thank you"},
+            {it: "Tappeto", he: "שטיח", en: "Carpet"},
+            {it: "Ospedale", he: "בית חולים", en: "Hospital"},
+            {it: "Ho capito", he: "הבנתי", en: "I understand / I got it"},
+            {it: "Figlio", he: "בן", en: "Son"},
+            {it: "Nonna", he: "סבתא", en: "Grandmother"},
+            {it: "Cucchiaino", he: "כפית", en: "Teaspoon"},
+            {it: "Riso", he: "אורז", en: "Rice"},
+            {it: "Giorno", he: "יום", en: "Day"},
+            {it: "Piacere", he: "נעים להכיר", en: "Nice to meet you"},
+            {it: "Hai bisogno di aiuto?", he: "אתה צריך עזרה?", en: "Do you need help?"},
+            {it: "Scorciatoia", he: "קיצור דרך", en: "Shortcut"},
+            {it: "Asciugamano", he: "מגבת", en: "Towel"},
+            {it: "Forse", he: "אולי", en: "Maybe", hook: "עוגן: נשמע כמו פרוסה. 'אולי אני אקח עוד פרוסה (Forse)?'"},
+            {it: "Buonasera", he: "ערב טוב", en: "Good evening"},
+            {it: "Facilità", he: "קלות", en: "Ease"},
+            {it: "Attimo", he: "רגע / שבריר שנייה", en: "Moment / second"},
+            {it: "Tensione", he: "מתח", en: "Tension"},
+            {it: "Pesce", he: "דג", en: "Fish"},
+            {it: "Cuscino", he: "כרית", en: "Pillow"},
+            {it: "Bicchiere", he: "כוס", en: "Glass"},
+            {it: "Settimana", he: "שבוע", en: "Week"},
+            {it: "Di solito", he: "בדרך כלל", en: "Usually"},
+            {it: "Oggi", he: "היום", en: "Today"},
+            {it: "Domani", he: "מחר", en: "Tomorrow"},
+            {it: "Mondiale", he: "עולמי", en: "Worldwide"},
+            {it: "Chi", he: "מי", en: "Who"},
+            {it: "Nipote (f)", he: "נכדה", en: "Granddaughter"},
+            {it: "Vento", he: "רוח", en: "Wind"},
+            {it: "Sempre", he: "תמיד", en: "Always", hook: "עוגן: ה'סיר' (Semp-re) תמיד על האש. או September always comes."},
+            {it: "Niente", he: "כלום / שום דבר", en: "Nothing"},
+            {it: "Sì", he: "כן", en: "Yes"},
+            {it: "Fratello", he: "אח", en: "Brother"},
+            {it: "Penna", he: "עט", en: "Pen"},
+            {it: "Che cosa", he: "מה או איזה דבר", en: "What"},
+            {it: "Salotto", he: "סלון", en: "Living room"},
+            {it: "Pazienza", he: "סבלנות", en: "Patience"},
+            {it: "Verdura", he: "ירקות", en: "Vegetables"},
+            {it: "Certamente", he: "בהחלט / בטח", en: "Certainly / Of course"},
+            {it: "Fame", he: "רעב", en: "Hunger"},
+            {it: "Stare in piedi", he: "לעמוד או להיות בעמידה", en: "To stand or Standing"},
+            {it: "Borsa", he: "תיק", en: "Bag"},
+            {it: "Armadio", he: "ארון", en: "Wardrobe or Closet"},
+            {it: "Salute", he: "בריאות", en: "Health"},
+            {it: "Insegnante", he: "מורה", en: "Teacher", hook: "עוגן: ה-gn נהגית 'ניו'. מי שמשאיר סימנים (Signal) פנימה (In)."},
+            {it: "Un attimo solo", he: "רק רגע אחד", en: "Just a moment"},
+            {it: "Esatto", he: "מדויק / נכון מאוד", en: "Exactly"},
+            {it: "Buon appetito", he: "בתיאבון", en: "Enjoy your meal"},
+            {it: "Rabbia", he: "כעס", en: "Anger"},
+            {it: "Mela", he: "תפוח", en: "Apple"},
+            {it: "Te l'ho detto", he: "אמרתי לך (את זה)", en: "I told you so"},
+            {it: "Caffè", he: "קפה", en: "Coffee"},
+            {it: "Cucina", he: "מטבח", en: "Kitchen"},
+            {it: "Amore", he: "אהבה", en: "Love"},
+            {it: "Bambino", he: "ילד", en: "Child or Boy"},
+            {it: "Perché", he: "למה או בגלל", en: "Why or Because"},
+            {it: "Nessun problema", he: "אין שום בעיה", en: "No problem"},
+            {it: "Lettera", he: "מכתב", en: "Letter"},
+            {it: "Sabbia", he: "חול", en: "Sand"},
+            {it: "Bambina", he: "ילדה", en: "Child or Girl"},
+            {it: "Cucchiaio", he: "כף", en: "Spoon"},
+            {it: "Non vedo l'ora", he: "אני לא יכול לחכות (לא רואה את השעה)", en: "I can't wait"},
+            {it: "Vicini", he: "שכנים", en: "Neighbors"},
+            {it: "Scusa", he: "סליחה", en: "Excuse me or Sorry"},
+            {it: "Come", he: "איך", en: "How"},
+            {it: "Carne", he: "בשר", en: "Meat"},
+            {it: "Pasto", he: "ארוחה", en: "Meal"},
+            {it: "Sera", he: "ערב", en: "Evening"},
+            {it: "Cappello", he: "כובע", en: "Hat"},
+            {it: "Speranza", he: "תקווה", en: "Hope"},
+            {it: "Bugia", he: "שקר", en: "Lie"},
+            {it: "Che figuraccia!", he: "איזו פדיחה / בושה!", en: "What an embarrassment!"},
+            {it: "Piatto", he: "צלחת", en: "Plate"},
+            {it: "Dipende", he: "זה תלוי", en: "It depends"},
+            {it: "Quadro", he: "תמונה", en: "Picture"},
+            {it: "Dottore", he: "רופא", en: "Doctor"},
+            {it: "Finestra", he: "חלון", en: "Window"},
+            {it: "Insalata", he: "סלט", en: "Salad"},
+            {it: "Che peccato", he: "איזה חבל / חבל מאוד", en: "What a pity"},
+            {it: "Zio", he: "דוד", en: "Uncle"},
+            {it: "Città", he: "עיר", en: "City"},
+            {it: "Mondo", he: "עולם", en: "World"},
+            {it: "Libro", he: "ספר", en: "Book"},
+            {it: "Azione", he: "עשייה או פעולה", en: "Action"},
+            {it: "Olio", he: "שמן", en: "Oil"},
+            {it: "Chiave", he: "מפתח", en: "Key"},
+            {it: "Prendere", he: "לקחת", en: "To take"},
+            {it: "A dopo", he: "נתראה אחר כך / לעד מעט", en: "See you later"},
+            {it: "Madre", he: "אמא", en: "Mother"},
+            {it: "Corsa", he: "ריצה", en: "Run"},
+            {it: "Pomeriggio", he: "צהריים", en: "Afternoon"},
+            {it: "Spesa", he: "קניות (בעיקר מצרכים)", en: "Grocery shopping"},
+            {it: "Ma dai!", he: "נו באמת! / נו באיי!", en: "Come on!"},
+            {it: "Uovo", he: "ביצה", en: "Egg"},
+            {it: "Stanchezza", he: "עייפות", en: "Fatigue or Tiredness"},
+            {it: "Come al solito", he: "כרגיל / כמו תמיד", en: "As usual"},
+            {it: "Mese", he: "חודש", en: "Month"},
+            {it: "Pioggia", he: "גשם", en: "Rain"},
+            {it: "Bello", he: "יפה", en: "Beautiful / Nice"},
+            {it: "Ho fretta", he: "אני ממהר", en: "I'm in a hurry"},
+            {it: "Non c'è di che", he: "על לא דבר", en: "Don't mention it"},
+            {it: "Pace", he: "שלום נגד מלחמה", en: "Peace"},
+            {it: "Scrittura", he: "כתיבה", en: "Writing"},
+            {it: "Dovere", he: "חובה / חייב", en: "To have to / must"},
+            {it: "Dove", he: "איפה", en: "Where"},
+            {it: "Macchina", he: "מכונה או אוטו", en: "Machine or Car"},
+            {it: "Soluzione", he: "פתרון", en: "Solution"},
+            {it: "Velocità", he: "מהירות", en: "Speed"},
+            {it: "Colore", he: "צבע", en: "Color"},
+            {it: "Pronto", he: "הלו (בטלפון) / מוכן", en: "Hello / Ready"},
+            {it: "Meno male", he: "ברוך השם / למזלנו", en: "Thank goodness"},
+            {it: "Strumento", he: "כלי", en: "Tool or Instrument"},
+            {it: "Facile", he: "קל", en: "Easy"},
+            {it: "Idea", he: "רעיון", en: "Idea"},
+            {it: "Donna", he: "אישה", en: "Woman"},
+            {it: "Canzone", he: "שיר", en: "Song"},
+            {it: "Sorella", he: "אחות", en: "Sister"},
+            {it: "Dov'è il bagno?", he: "איפה השירותים?", en: "Where is the bathroom?"},
+            {it: "Sole", he: "שמש", en: "Sun"},
+            {it: "Non c'è problema", he: "אין בעיה", en: "No problem"},
+            {it: "Torta", he: "עוגה", en: "Cake"},
+            {it: "Acqua", he: "מים", en: "Water"},
+            {it: "Ho fame", he: "אני רעב", en: "I'm hungry"},
+            {it: "Sveglia", he: "שעון מעורר", en: "Alarm clock"},
+            {it: "Arrivederci", he: "להתראות", en: "Goodbye"},
+            {it: "Daccordo", he: "מסכים / מוסכם", en: "Agreed"},
+            {it: "A presto", he: "נתראה בקרוב", en: "See you soon"},
+            {it: "Buonanotte", he: "לילה טוב", en: "Good night"},
+            {it: "Ho sete", he: "אני צמא", en: "I'm thirsty"},
+            {it: "Tutto bene", he: "הכל טוב", en: "Everything is fine"},
+            {it: "Magari", he: "הלוואי / אולי", en: "I wish / Maybe"},
+            {it: "Sciocchezza", he: "שטות / שטויות", en: "Nonsense"},
+            {it: "Saggio", he: "חכם / נבון", en: "Wise"},
+            {it: "Fatto", he: "עשוי / גמור", en: "Done"},
+            {it: "Bravissimo", he: "כל הכבוד / מצוין", en: "Very well done"},
+            {it: "Povero", he: "מסכן / עני", en: "Poor"},
+            {it: "Cosa fai?", he: "מה אתה עושה?", en: "What are you doing?"},
+            {it: "Niente di speciale", he: "שום דבר מיוחד", en: "Nothing special"},
+            {it: "Mi piaci", he: "אתה מוצא חן בעיניי", en: "I like you"},
+            {it: "Senti", he: "תקשיב / שמע", en: "Listen"},
+            {it: "Guarda", he: "תראה / תסתכל", en: "Look"},
+            {it: "Basta", he: "מספיק / די", en: "Enough / Stop"},
+            {it: "Che c'è?", he: "מה יש? / מה קרה?", en: "What's wrong?"},
+            {it: "Sto scherzando", he: "אני צוחק / מתבדח", en: "I'm joking"},
+            {it: "Davvero?", he: "באמת?", en: "Really?"},
+            {it: "Sul serio", he: "ברצינות", en: "Seriously"},
+            {it: "Mi fa piacere", he: "משמח אותי", en: "I'm glad"},
+            {it: "Beato te", he: "אשריך / כיף לך", en: "Lucky you"},
+            {it: "Che macello!", he: "איזה בלאגן / סיוט!", en: "What a mess!"},
+            {it: "Tutto chiaro", he: "הכל ברור", en: "Everything clear"},
+            {it: "Capisco", he: "אני מבין", en: "I understand"},
+            {it: "Permesso", he: "ברשותכם (כשנכנסים למקום)", en: "Excuse me (to enter)"},
+            {it: "Scusa il ritardo", he: "סליחה על האיחור", en: "Sorry for being late"},
+            {it: "Che sorpresa!", he: "איזו הפתעה!", en: "What a surprise!"},
+            {it: "Mi sono dimenticato", he: "שכחתי", en: "I forgot"},
+            {it: "Ricordo", he: "אני זוכר / זיכרון", en: "I remember / memory"},
+            {it: "Nessuno", he: "אף אחד", en: "Nobody"},
+            {it: "Qualcuno", he: "מישהו", en: "Somebody"},
+            {it: "Qualcosa", he: "משהו", en: "Something"},
+            {it: "Da solo", he: "לבדו / לבד", en: "Alone"},
+            {it: "Insieme", he: "ביחד", en: "Together"},
+            {it: "Di nuovo", he: "שוב / מחדש", en: "Again"},
+            {it: "Spesso", he: "לעיתים קרובות", en: "Often"},
+            {it: "Raramente", he: "לעיתים רחוקות", en: "Rarely"},
+            {it: "Finalmente", he: "סוף סוף", en: "Finally"},
+            {it: "All'improvviso", he: "פתאום", en: "Suddenly"},
+            {it: "Sicuramente", he: "בטוח / בוודאות", en: "Surely"},
+            {it: "Purtroppo", he: "למרבה הצער / חבל", en: "Unfortunately"},
+            {it: "Invece", he: "לעומת זאת / במקום", en: "Instead"},
+            {it: "Cioè", he: "כלומר / זאת אומרת", en: "That is to say / i.e."},
+            {it: "Comunque", he: "בכל מקרה / בכל אופן", en: "Anyway"},
+            {it: "Quasi", he: "כמעט", en: "Almost"},
+            {it: "Soprattutto", he: "בעיקר / במיוחד", en: "Above all / especially"},
+            {it: "Praticamente", he: "מעשית / למעשה", en: "Practically"},
+            {it: "Insomma", he: "בקיצור / פחות או יותר", en: "In short / so-so"},
+            {it: "Secondo me", he: "לדעתי", en: "In my opinion"},
+            {it: "Hai ragione", he: "אתה צודק", en: "You're right"},
+            {it: "Hai torto", he: "אתה טועה", en: "You're wrong"},
+            {it: "Ti va?", he: "בא לך? / מתאים לך?", en: "Do you feel like it?"},
+            {it: "Non mi va", he: "לא בא לי", en: "I don't feel like it"},
+            {it: "Che bello!", he: "איזה יופי!", en: "How nice!"},
+            {it: "Che brutto!", he: "איזה מכוער / גרוע!", en: "How ugly / bad!"},
+            {it: "Mi raccomando", he: "בבקשה ממך / שים לב", en: "Please make sure / mind you"},
+            {it: "Fai attenzione", he: "זהירות / שים לב", en: "Pay attention / Be careful"},
+            {it: "Buon viaggio", he: "טיול נעים / נסיעה טובה", en: "Have a good trip"},
+            {it: "Divertiti", he: "תעשה חיים / תהנה", en: "Have fun"},
+            {it: "Saluti", he: "דרישת שלום / ברכות", en: "Greetings"},
+            {it: "Ci vediamo", he: "נתראה", en: "See you"},
+            {it: "Fatti sentire", he: "תשמיע קול / תהיה בקשר", en: "Keep in touch"},
+            {it: "Fammi sapere", he: "תקן אותי / תודיע לי", en: "Let me know"},
+            {it: "Che tempo fa?", he: "מה מזג האוויר?", en: "How's the weather?"},
+            {it: "Fa caldo", he: "חם", en: "It's hot"},
+            {it: "Fa freddo", he: "קר", en: "It's cold"},
+            {it: "Piove", he: "יורד גשם", en: "It's raining"},
+            {it: "C'è il sole", he: "שמשי", en: "It's sunny"},
+            {it: "Buon divertimento", he: "בילוי נעים", en: "Have a good time"},
+            {it: "Accomodati", he: "תרגיש בנוח / שב", en: "Make yourself at home"},
+            {it: "Fai con comodo", he: "קח את הזמן", en: "Take your time"},
+            {it: "Sei pronto?", he: "אתה מוכן?", en: "Are you ready?"},
+            {it: "Sono pronto", he: "אני מוכן", en: "I am ready"},
+            {it: "Aspetta", he: "חכה", en: "Wait"},
+            {it: "Vieni qui", he: "בוא הנה", en: "Come here"},
+            {it: "Andiamo", he: "בוא נלך / קדימה", en: "Let's go"},
+            {it: "Muoviti", he: "תזדרז / תזוז", en: "Hurry up / move"},
+            {it: "Dimmi", he: "תגיד לי", en: "Tell me"},
+            {it: "Chiedi", he: "תבקש / תשאל", en: "Ask"},
+            {it: "Rispondi", he: "תענה", en: "Answer"},
+            {it: "Non ti preoccupare", he: "אל תדאג", en: "Don't worry"},
+            {it: "Tirati su", he: "תתעודד", en: "Cheer up"},
+            {it: "Tranquillo", he: "רגוע / אל דאגה", en: "Calm / Quiet"},
+            {it: "Serio", he: "רציני", en: "Serious"},
+            {it: "Simpatico", he: "נחמד / סימפטי", en: "Nice / Likable"},
+            {it: "Antipatico", he: "לא נחמד / מעצבן", en: "Unpleasant"},
+            {it: "Disponibile", he: "פנוי / זמין", en: "Available"},
+            {it: "Occupato", he: "תפוס / עסוק", en: "Busy / Occupied"},
+            {it: "Libero", he: "חופשי", en: "Free"},
+            {it: "Nuovo", he: "חדש", en: "New"},
+            {it: "Vecchio", he: "ישן / זקן", en: "Old"},
+            {it: "Grande", he: "גדול", en: "Big"},
+            {it: "Piccolo", he: "קטן", en: "Small"},
+            {it: "Alto", he: "גבוה", en: "High / Tall"},
+            {it: "Basso", he: "נמוך", en: "Low / Short"},
+            {it: "Lungo", he: "ארוך", en: "Long"},
+            {it: "Corto", he: "קצר", en: "Short (length)"},
+            {it: "Caro", he: "יקר (מחיר או רגש)", en: "Expensive / Dear"},
+            {it: "Economico", he: "זול / חסכוני", en: "Cheap / Economical"},
+            {it: "Vicino", he: "קרוב", en: "Near"},
+            {it: "Lontano", he: "רחוק", en: "Far"},
+            {it: "Pieno", he: "מלא", en: "Full"},
+            {it: "Vuoto", he: "ריק", en: "Empty"},
+            {it: "Aperto", he: "פתוח", en: "Open"},
+            {it: "Chiuso", he: "סגור", en: "Closed"},
+            {it: "Caldo", he: "חם (תואר)", en: "Hot"},
+            {it: "Freddo", he: "קר (תואר)", en: "Cold"},
+            {it: "Pulito", he: "נקי", en: "Clean"},
+            {it: "Sporco", he: "מלוכלך", en: "Dirty"},
+            {it: "Giusto", he: "נכון / צודק", en: "Right / Just"},
+            {it: "Sbagliato", he: "טעות / שגוי", en: "Wrong"},
+            {it: "Felice", he: "שמח", en: "Happy"},
+            {it: "Triste", he: "עצוב", en: "Sad"},
+            {it: "Veloce", he: "מהיר", en: "Fast"},
+            {it: "Lento", he: "איטי", en: "Slow"},
+            {it: "Forte", he: "חזק", en: "Strong"},
+            {it: "Debole", he: "חלש", en: "Weak"},
+            {it: "Ottimo", he: "מצוין", en: "Excellent"},
+            {it: "Pessimo", he: "גרוע ביותר", en: "Terrible"},
+            {it: "Importante", he: "חשוב", en: "Important"},
+            {it: "Inutile", he: "חסר תועלת", en: "Useless"},
+            {it: "Interessante", he: "מעניין", en: "Interesting"},
+            {it: "Noioso", he: "משעמם", en: "Boring"},
+            {it: "Facile", he: "קל (רמת קושי)", en: "Easy"},
+            {it: "Difficile", he: "קשה", en: "Difficult"},
+            {it: "Sicuro", he: "בטוח", en: "Safe / Sure"},
+            {it: "Pericoloso", he: "מסוכן", en: "Dangerous"},
+            {it: "Chiaro", he: "ברור / בהיר", en: "Clear / Light"},
+            {it: "Scuro", he: "כהה", en: "Dark"},
+            {it: "Diverso", he: "שונה", en: "Different"},
+            {it: "Uguale", he: "זהה / שווה", en: "Same / Equal"},
+            {it: "Simile", he: "דומה", en: "Similar"},
+            {it: "Solito", he: "רגיל / רגיל לעשות", en: "Usual"},
+            {it: "Strano", he: "מוזר", en: "Strange"},
+            {it: "Normale", he: "נורמלי", en: "Normal"},
+            {it: "Speciale", he: "מיוחד", en: "Special"}
+        ];
+
+        let queue = [];
+        let idx = 0;
+
+        const adjectiveWords = new Set([
+            "Costoso", "Meraviglioso", "Stanco", "Bello", "Saggio", "Povero",
+            "Serio", "Simpatico", "Antipatico", "Disponibile", "Occupato", "Libero",
+            "Nuovo", "Vecchio", "Grande", "Piccolo", "Alto", "Basso", "Lungo",
+            "Corto", "Caro", "Economico", "Vicino", "Lontano", "Pieno", "Vuoto",
+            "Aperto", "Chiuso", "Caldo", "Freddo", "Pulito", "Sporco", "Giusto",
+            "Sbagliato", "Felice", "Triste", "Veloce", "Lento", "Forte", "Debole",
+            "Ottimo", "Pessimo", "Importante", "Inutile", "Interessante", "Noioso",
+            "Facile", "Difficile", "Sicuro", "Pericoloso", "Chiaro", "Scuro",
+            "Diverso", "Uguale", "Simile", "Solito", "Strano", "Normale", "Speciale",
+            "Integrale", "Multicereali", "Diversi", "Ripieno", "Poca"
+        ]);
+
+        const pluralAdjectives = new Set(["Diversi", "Tutti uguali", "Cipolle", "Salse", "Cereali", "Patatine", "Vicini"]);
+
+        const customExamples = {
+            "Ne prenda una": ["Ne prenda una, è molto buona.", "קח/י אחת, היא טובה מאוד."],
+            "Ne prendo una": ["Queste mele sembrano buone, ne prendo una.", "התפוחים האלה נראים טובים, אקח אחת."],
+            "Che pane avete?": ["Buongiorno, che pane avete oggi?", "בוקר טוב, איזה לחם יש לכם היום?"],
+            "Zuppa": ["Vorrei una zuppa calda.", "הייתי רוצה מרק חם."],
+            "Abbiamo": ["Abbiamo pane fresco e verdure.", "יש לנו לחם טרי וירקות."],
+            "Con": ["Prendo la zuppa con il pane.", "אקח את המרק עם הלחם."],
+            "Patatine": ["Vorrei delle patatine, per favore.", "הייתי רוצה צ׳יפס, בבקשה."],
+            "Aceto": ["Metto un po' di aceto nell'insalata.", "אני שמה מעט חומץ בסלט."],
+            "Molte opzioni": ["Qui ci sono molte opzioni.", "יש כאן הרבה אפשרויות."],
+            "Melanzana": ["La melanzana è molto fresca.", "החציל טרי מאוד."],
+            "Zucchina": ["Compro una zucchina per la cena.", "אני קונה קישוא לארוחת הערב."],
+            "Che tipi?": ["Che tipi di pane avete?", "אילו סוגי לחם יש לכם?"],
+            "Integrale": ["Preferisco il pane integrale.", "אני מעדיפה לחם מחיטה מלאה."],
+            "Multicereali": ["Prendo un panino multicereali.", "אקח לחמנייה רב־דגנים."],
+            "Diversi": ["Abbiamo diversi tipi di pane.", "יש לנו סוגים שונים של לחם."],
+            "Cereali": ["Questo pane è fatto con molti cereali.", "הלחם הזה עשוי מדגנים רבים."],
+            "È sano": ["Mangiare verdure è sano.", "לאכול ירקות זה בריא."],
+            "Prendo": ["Prendo questo, grazie.", "אקח את זה, תודה."],
+            "Ripieno": ["Vorrei un panino ripieno di verdure.", "הייתי רוצה כריך ממולא בירקות."],
+            "Cipolle": ["Senza cipolle, per favore.", "בלי בצל, בבקשה."],
+            "Desidera": ["Desidera altro?", "תרצה/י עוד משהו?"],
+            "Poca": ["Vorrei poca salsa.", "הייתי רוצה מעט רוטב."],
+            "Salse": ["Quali salse avete?", "אילו רטבים יש לכם?"],
+            "Senape": ["Vorrei un po' di senape.", "הייתי רוצה מעט חרדל."],
+            "Per quando?": ["Per quando serve l'ordine?", "למתי צריך את ההזמנה?"],
+            "Tra un'ora": ["Torno tra un'ora.", "אחזור בעוד שעה."],
+            "Tutti uguali": ["Questi bicchieri sono tutti uguali.", "הכוסות האלה כולן אותו דבר."],
+            "Che bello vederti": ["Che bello vederti dopo tanto tempo!", "איזה כיף לראות אותך אחרי הרבה זמן!"],
+            "Anche per me": ["È stato un piacere anche per me.", "זה היה תענוג גם בשבילי."],
+            "Tutto a posto": ["Non preoccuparti, è tutto a posto.", "אל תדאג/י, הכול בסדר."],
+            "Fine settimana": ["Cosa fai questo fine settimana?", "מה את/ה עושה בסוף השבוע הזה?"],
+            "Cos'hai fatto?": ["Cos'hai fatto ieri sera?", "מה עשית אתמול בערב?"],
+            "Niente di che": ["Com'è stato il film? Niente di che.", "איך היה הסרט? שום דבר מיוחד."],
+            "Il solito": ["Per me il solito, grazie.", "בשבילי כרגיל, תודה."],
+            "E poi?": ["E poi, cosa è successo?", "ואז, מה קרה?"],
+            "Macché": ["Sei stanca? Macché!", "את עייפה? מה פתאום!"],
+            "Proprio così": ["Sì, è proprio così.", "כן, זה בדיוק כך."],
+            "Sei uscita?": ["Sei uscita ieri sera?", "יצאת אתמול בערב?"],
+            "E cosa avete visto?": ["Siete andati al cinema? E cosa avete visto?", "הלכתם לקולנוע? ומה ראיתם?"],
+            "Costoso": ["Questo ristorante è troppo costoso.", "המסעדה הזאת יקרה מדי."],
+            "Abbastanza": ["Ho mangiato abbastanza.", "אכלתי מספיק."],
+            "Ragione": ["Hai ragione, questo è meglio.", "את/ה צודק/ת, זה טוב יותר."],
+            "Decidere": ["Devo decidere entro domani.", "אני צריכ/ה להחליט עד מחר."],
+            "Odiano": ["Loro odiano aspettare.", "הם שונאים לחכות."],
+            "Costa meno": ["Questo modello costa meno.", "הדגם הזה עולה פחות."],
+            "La metà": ["Ne mangio solo la metà.", "אני אוכל/ת רק חצי."],
+            "Terra": ["La borsa è caduta per terra.", "התיק נפל על הרצפה."],
+            "Pavimento": ["Il pavimento è pulito.", "הרצפה נקייה."],
+            "Li provi?": ["Questi pantaloni sono belli, li provi?", "המכנסיים האלה יפים, תמדדי/תמדוד אותם?"],
+            "Camerino": ["Il camerino è in fondo a destra.", "תא המדידה נמצא בסוף מימין."],
+            "Fondo": ["Il bagno è in fondo al corridoio.", "השירותים נמצאים בסוף המסדרון."],
+            "Destra": ["Giri a destra dopo il semaforo.", "פנה/י ימינה אחרי הרמזור."],
+            "Servono": ["Mi servono due bottiglie d'acqua.", "אני צריכ/ה שני בקבוקי מים."],
+            "Sarebbe": ["Sarebbe una buona idea.", "זה היה יכול להיות רעיון טוב."],
+            "Accetto": ["Accetto la tua proposta.", "אני מקבל/ת את ההצעה שלך."],
+            "Lascia": ["Lascia la borsa qui.", "השאר/י את התיק כאן."],
+            "Mi lascia un numero di telefono?": ["Mi lascia un numero di telefono, per favore?", "אפשר להשאיר לי מספר טלפון, בבקשה?"],
+            "La chiamo": ["La chiamo domani mattina.", "אתקשר אליך/אלייך מחר בבוקר."],
+            "Dopo": ["Ci vediamo dopo il lavoro.", "נתראה אחרי העבודה."],
+            "E tanto": ["Abbiamo parlato tanto, e tanto ci resta da dire.", "דיברנו הרבה, ועוד נשאר לנו הרבה לומר."],
+            "Gente": ["C'è molta gente in piazza.", "יש הרבה אנשים בכיכר."],
+            "Divertimento": ["Il viaggio è stato puro divertimento.", "הטיול היה הנאה צרופה."],
+            "In bocca al lupo": ["Domani hai l'esame? In bocca al lupo!", "יש לך מבחן מחר? בהצלחה!"],
+            "Forchetta": ["Mangio la pasta con la forchetta.", "אני אוכל/ת את הפסטה במזלג."],
+            "Zucchero": ["Prendo il caffè senza zucchero.", "אני שותה קפה בלי סוכר."],
+            "Dipendente": ["Lei è una dipendente dell'azienda.", "היא עובדת של החברה."],
+            "Che ore sono?": ["Scusi, che ore sono?", "סליחה, מה השעה?"],
+            "Prego": ["Grazie mille! — Prego!", "תודה רבה! — בבקשה!"],
+            "Ascolto": ["Ascolto la musica ogni mattina.", "אני מקשיב/ה למוזיקה בכל בוקר."],
+            "Dormire": ["Voglio dormire otto ore stanotte.", "אני רוצה לישון שמונה שעות הלילה."],
+            "Inoltre": ["Il ristorante è buono e, inoltre, non è costoso.", "המסעדה טובה, ובנוסף היא אינה יקרה."],
+            "Gatto": ["Il gatto dorme sul divano.", "החתול ישן על הספה."],
+            "Tavolo": ["Le chiavi sono sul tavolo.", "המפתחות נמצאים על השולחן."],
+            "Nuvola": ["C'è una nuvola scura nel cielo.", "יש ענן כהה בשמיים."],
+            "Nipote (m)": ["Mio nipote ha dieci anni.", "הנכד שלי בן עשר."],
+            "Non importa": ["Non importa, possiamo farlo domani.", "לא משנה, אפשר לעשות זאת מחר."],
+            "Muro": ["C'è un quadro sul muro.", "יש תמונה על הקיר."],
+            "Albero": ["C'è un grande albero davanti a casa.", "יש עץ גדול מול הבית."],
+            "Va bene": ["Va bene, ci vediamo alle otto.", "בסדר, נתראה בשמונה."],
+            "Preoccupazione": ["Non c'è motivo di preoccupazione.", "אין סיבה לדאגה."],
+            "Allora": ["Allora, cosa facciamo adesso?", "אז, מה עושים עכשיו?"],
+            "Meraviglioso": ["Il panorama è meraviglioso.", "הנוף נפלא."],
+            "Frutta": ["Mangio frutta ogni giorno.", "אני אוכל/ת פירות בכל יום."],
+            "Non lo so": ["Dov'è Marco? Non lo so.", "איפה מרקו? אני לא יודע/ת."],
+            "Respiro": ["Faccio un respiro profondo.", "אני נושם/ת נשימה עמוקה."],
+            "Stanco": ["Dopo il lavoro sono stanco.", "אחרי העבודה אני עייף."],
+            "Cane": ["Il cane corre nel parco.", "הכלב רץ בפארק."],
+            "Tenda": ["Apro la tenda per far entrare la luce.", "אני פותח/ת את הווילון כדי להכניס אור."],
+            "Scuola": ["I bambini vanno a scuola ogni mattina.", "הילדים הולכים לבית הספר בכל בוקר."],
+            "Grazie": ["Grazie per il tuo aiuto.", "תודה על העזרה שלך."],
+            "Tappeto": ["Il tappeto è sotto il tavolo.", "השטיח נמצא מתחת לשולחן."],
+            "Ospedale": ["Il medico lavora in ospedale.", "הרופא עובד בבית החולים."],
+            "Ho capito": ["Ho capito quello che hai detto.", "הבנתי מה שאמרת."],
+            "Figlio": ["Mio figlio studia italiano.", "הבן שלי לומד איטלקית."],
+            "Nonna": ["Mia nonna prepara una torta buonissima.", "סבתא שלי מכינה עוגה טעימה מאוד."],
+            "Cucchiaino": ["Metto un cucchiaino di zucchero nel tè.", "אני שם/ה כפית סוכר בתה."],
+            "Riso": ["Per cena mangiamo riso e verdure.", "לארוחת ערב אנחנו אוכלים אורז וירקות."],
+            "Giorno": ["Oggi è una bella giornata.", "היום הוא יום יפה."],
+            "Piacere": ["Piacere, mi chiamo Anna.", "נעים להכיר, קוראים לי אנה."],
+            "Hai bisogno di aiuto?": ["Hai bisogno di aiuto con le valigie?", "את/ה צריך/ה עזרה עם המזוודות?"],
+            "Scorciatoia": ["Conosco una scorciatoia per il centro.", "אני מכיר/ה קיצור דרך למרכז."],
+            "Asciugamano": ["L'asciugamano è in bagno.", "המגבת נמצאת בחדר האמבטיה."],
+            "Forse": ["Forse domani andiamo al mare.", "אולי מחר נלך לים."],
+            "Buonasera": ["Buonasera, avete un tavolo per due?", "ערב טוב, יש לכם שולחן לשניים?"],
+            "Facilità": ["Ha imparato l'italiano con facilità.", "הוא/היא למד/ה איטלקית בקלות."],
+            "Attimo": ["Aspetta un attimo, per favore.", "חכה/י רגע, בבקשה."],
+            "Tensione": ["Prima dell'esame sento molta tensione.", "לפני המבחן אני מרגיש/ה מתח רב."],
+            "Pesce": ["Oggi ordino il pesce alla griglia.", "היום אזמין דג על האש."],
+            "Cuscino": ["Il cuscino è molto comodo.", "הכרית נוחה מאוד."],
+            "Bicchiere": ["Vorrei un bicchiere d'acqua.", "הייתי רוצה כוס מים."],
+            "Settimana": ["Lavoro cinque giorni alla settimana.", "אני עובד/ת חמישה ימים בשבוע."],
+            "Di solito": ["Di solito bevo il caffè al mattino.", "בדרך כלל אני שותה קפה בבוקר."],
+            "Oggi": ["Oggi resto a casa.", "היום אני נשאר/ת בבית."],
+            "Domani": ["Domani partiamo per Roma.", "מחר אנחנו יוצאים לרומא."],
+            "Mondiale": ["È un problema mondiale.", "זו בעיה עולמית."],
+            "Chi": ["Chi viene con noi?", "מי בא איתנו?"],
+            "Nipote (f)": ["Mia nipote vive a Milano.", "הנכדה שלי גרה במילאנו."],
+            "Vento": ["Oggi c'è molto vento.", "היום יש הרבה רוח."],
+            "Sempre": ["Lei arriva sempre in orario.", "היא תמיד מגיעה בזמן."],
+            "Niente": ["Non ho comprato niente.", "לא קניתי כלום."],
+            "Sì": ["Sì, vengo volentieri.", "כן, אבוא בשמחה."],
+            "Fratello": ["Mio fratello lavora a Roma.", "אחי עובד ברומא."],
+            "Penna": ["Posso usare la tua penna?", "אפשר להשתמש בעט שלך?"],
+            "Che cosa": ["Che cosa vuoi mangiare?", "מה את/ה רוצה לאכול?"],
+            "Salotto": ["Guardiamo la televisione in salotto.", "אנחנו צופים בטלוויזיה בסלון."],
+            "Pazienza": ["Ci vuole molta pazienza.", "צריך הרבה סבלנות."],
+            "Verdura": ["Compro la verdura al mercato.", "אני קונה ירקות בשוק."],
+            "Certamente": ["Certamente, posso aiutarti.", "בהחלט, אני יכול/ה לעזור לך."],
+            "Fame": ["Ho molta fame dopo l'allenamento.", "אני רעב/ה מאוד אחרי האימון."],
+            "Stare in piedi": ["Non posso stare in piedi per molto tempo.", "אני לא יכול/ה לעמוד זמן רב."],
+            "Borsa": ["La borsa è sulla sedia.", "התיק נמצא על הכיסא."],
+            "Armadio": ["I vestiti sono nell'armadio.", "הבגדים נמצאים בארון."],
+            "Salute": ["La salute è importante.", "הבריאות חשובה."],
+            "Insegnante": ["La mia insegnante parla lentamente.", "המורה שלי מדברת לאט."],
+            "Un attimo solo": ["Un attimo solo, arrivo subito.", "רק רגע, אני מגיע/ה מיד."],
+            "Esatto": ["Esatto, questa è la risposta giusta.", "בדיוק, זו התשובה הנכונה."],
+            "Buon appetito": ["La cena è pronta: buon appetito!", "ארוחת הערב מוכנה: בתיאבון!"],
+            "Rabbia": ["Ha parlato con rabbia.", "הוא/היא דיבר/ה בכעס."],
+            "Mela": ["Mangio una mela a colazione.", "אני אוכל/ת תפוח בארוחת הבוקר."],
+            "Te l'ho detto": ["Te l'ho detto ieri.", "אמרתי לך את זה אתמול."],
+            "Caffè": ["Vorrei un caffè, per favore.", "הייתי רוצה קפה, בבקשה."],
+            "Cucina": ["La cucina è piccola ma luminosa.", "המטבח קטן אבל מואר."],
+            "Amore": ["Lo fa con amore.", "הוא/היא עושה זאת באהבה."],
+            "Bambino": ["Il bambino gioca in giardino.", "הילד משחק בגינה."],
+            "Perché": ["Perché sei in ritardo?", "למה איחרת?"],
+            "Nessun problema": ["Nessun problema, posso aspettare.", "אין שום בעיה, אני יכול/ה לחכות."],
+            "Lettera": ["Scrivo una lettera a mia sorella.", "אני כותב/ת מכתב לאחותי."],
+            "Sabbia": ["I bambini giocano sulla sabbia.", "הילדים משחקים על החול."],
+            "Bambina": ["La bambina legge un libro.", "הילדה קוראת ספר."],
+            "Cucchiaio": ["Mangio la zuppa con il cucchiaio.", "אני אוכל/ת את המרק בכף."],
+            "Non vedo l'ora": ["Non vedo l'ora di partire.", "אני כבר לא יכול/ה לחכות לצאת לדרך."],
+            "Vicini": ["I nostri vicini sono molto gentili.", "השכנים שלנו נחמדים מאוד."],
+            "Scusa": ["Scusa, dov'è la stazione?", "סליחה, איפה התחנה?"],
+            "Come": ["Come stai oggi?", "מה שלומך היום?"],
+            "Carne": ["Non mangio carne.", "אני לא אוכל/ת בשר."],
+            "Pasto": ["La colazione è il mio pasto preferito.", "ארוחת הבוקר היא הארוחה האהובה עליי."],
+            "Sera": ["La sera leggo un libro.", "בערב אני קורא/ת ספר."],
+            "Cappello": ["Indossa un cappello rosso.", "הוא/היא חובש/ת כובע אדום."],
+            "Speranza": ["Non perdere la speranza.", "אל תאבד/י תקווה."],
+            "Bugia": ["Questa è una bugia.", "זה שקר."],
+            "Che figuraccia!": ["Ho dimenticato il suo nome: che figuraccia!", "שכחתי את השם שלו/ה: איזו פדיחה!"],
+            "Piatto": ["Questo piatto è delizioso.", "המנה הזאת טעימה."],
+            "Dipende": ["Vieni domani? Dipende dal tempo.", "את/ה בא/ה מחר? זה תלוי במזג האוויר."],
+            "Quadro": ["C'è un bel quadro in salotto.", "יש תמונה יפה בסלון."],
+            "Dottore": ["Devo andare dal dottore.", "אני צריך/ה ללכת לרופא."],
+            "Finestra": ["Apro la finestra perché fa caldo.", "אני פותח/ת את החלון כי חם."],
+            "Insalata": ["Prendo un'insalata mista.", "אקח סלט מעורב."],
+            "Che peccato": ["Non puoi venire? Che peccato!", "את/ה לא יכול/ה לבוא? איזה חבל!"],
+            "Zio": ["Mio zio vive in Toscana.", "הדוד שלי גר בטוסקנה."],
+            "Città": ["Roma è una città bellissima.", "רומא היא עיר יפהפייה."],
+            "Mondo": ["Vorrei viaggiare per il mondo.", "הייתי רוצה לטייל בעולם."],
+            "Libro": ["Sto leggendo un libro interessante.", "אני קורא/ת ספר מעניין."],
+            "Azione": ["Dobbiamo passare all'azione.", "אנחנו צריכים לעבור לפעולה."],
+            "Olio": ["Condisco l'insalata con olio e aceto.", "אני מתבל/ת את הסלט בשמן וחומץ."],
+            "Chiave": ["Non trovo la chiave di casa.", "אני לא מוצא/ת את מפתח הבית."],
+            "Prendere": ["Devo prendere il treno delle otto.", "אני צריך/ה לקחת את הרכבת של שמונה."],
+            "A dopo": ["Ora devo lavorare. A dopo!", "עכשיו אני צריך/ה לעבוד. נתראה אחר כך!"],
+            "Madre": ["Mia madre cucina molto bene.", "אמא שלי מבשלת טוב מאוד."],
+            "Corsa": ["Faccio una corsa ogni mattina.", "אני יוצא/ת לריצה בכל בוקר."],
+            "Pomeriggio": ["Ci vediamo questo pomeriggio.", "נתראה אחר הצהריים."],
+            "Spesa": ["Vado a fare la spesa.", "אני הולך/ת לעשות קניות."],
+            "Ma dai!": ["Hai vinto? Ma dai!", "ניצחת? נו באמת!"],
+            "Uovo": ["A colazione mangio un uovo.", "בארוחת הבוקר אני אוכל/ת ביצה."],
+            "Stanchezza": ["Sento molta stanchezza oggi.", "אני מרגיש/ה עייפות רבה היום."],
+            "Come al solito": ["È arrivato tardi, come al solito.", "הוא הגיע מאוחר, כרגיל."],
+            "Mese": ["Il prossimo mese vado in Italia.", "בחודש הבא אני נוסע/ת לאיטליה."],
+            "Pioggia": ["A causa della pioggia restiamo a casa.", "בגלל הגשם אנחנו נשארים בבית."],
+            "Bello": ["Questo posto è davvero bello.", "המקום הזה באמת יפה."],
+            "Ho fretta": ["Scusa, ho fretta.", "סליחה, אני ממהר/ת."],
+            "Non c'è di che": ["Grazie per l'aiuto. — Non c'è di che.", "תודה על העזרה. — על לא דבר."],
+            "Pace": ["Tutti desiderano vivere in pace.", "כולם רוצים לחיות בשלום."],
+            "Scrittura": ["La sua scrittura è molto chiara.", "הכתיבה שלו/ה ברורה מאוד."],
+            "Dovere": ["Devo finire questo lavoro.", "אני חייב/ת לסיים את העבודה הזאת."],
+            "Dove": ["Dove abiti?", "איפה את/ה גר/ה?"],
+            "Macchina": ["Vado al lavoro in macchina.", "אני נוסע/ת לעבודה במכונית."],
+            "Soluzione": ["Abbiamo trovato una soluzione.", "מצאנו פתרון."],
+            "Velocità": ["Riduci la velocità, per favore.", "האט/י את המהירות, בבקשה."],
+            "Colore": ["Qual è il tuo colore preferito?", "מה הצבע האהוב עליך?"],
+            "Pronto": ["Pronto, chi parla?", "הלו, מי מדבר?"],
+            "Meno male": ["Meno male che sei arrivato.", "מזל שהגעת."],
+            "Strumento": ["Questo strumento è facile da usare.", "הכלי הזה קל לשימוש."],
+            "Facile": ["Questo esercizio è facile.", "התרגיל הזה קל."],
+            "Idea": ["Ho una buona idea.", "יש לי רעיון טוב."],
+            "Donna": ["Quella donna è mia insegnante.", "האישה ההיא היא המורה שלי."],
+            "Canzone": ["Questa canzone mi piace molto.", "אני אוהב/ת מאוד את השיר הזה."],
+            "Sorella": ["Mia sorella studia a Firenze.", "אחותי לומדת בפירנצה."],
+            "Dov'è il bagno?": ["Scusi, dov'è il bagno?", "סליחה, איפה השירותים?"],
+            "Sole": ["Oggi c'è il sole.", "היום יש שמש."],
+            "Non c'è problema": ["Non c'è problema, posso aspettare.", "אין בעיה, אני יכול/ה לחכות."],
+            "Torta": ["Ho preparato una torta al cioccolato.", "הכנתי עוגת שוקולד."],
+            "Acqua": ["Vorrei una bottiglia d'acqua.", "הייתי רוצה בקבוק מים."],
+            "Ho fame": ["Ho fame, mangiamo qualcosa?", "אני רעב/ה, נאכל משהו?"],
+            "Sveglia": ["La sveglia suona alle sette.", "השעון המעורר מצלצל בשבע."],
+            "Arrivederci": ["Arrivederci, a domani!", "להתראות, עד מחר!"],
+            "Daccordo": ["D'accordo, facciamo così.", "בסדר, נעשה כך."],
+            "A presto": ["Grazie di tutto, a presto!", "תודה על הכול, נתראה בקרוב!"],
+            "Buonanotte": ["Sono stanco, buonanotte.", "אני עייף/ה, לילה טוב."],
+            "Ho sete": ["Ho sete, vorrei dell'acqua.", "אני צמא/ה, הייתי רוצה מים."],
+            "Tutto bene": ["Come stai? Tutto bene, grazie.", "מה שלומך? הכול טוב, תודה."],
+            "Magari": ["Magari potessimo andare in Italia!", "הלוואי שיכולנו לנסוע לאיטליה!"],
+            "Sciocchezza": ["Non preoccuparti, è una sciocchezza.", "אל תדאג/י, זו שטות."],
+            "Saggio": ["È un uomo molto saggio.", "הוא אדם חכם מאוד."],
+            "Fatto": ["Il lavoro è fatto.", "העבודה הסתיימה."],
+            "Bravissimo": ["Hai risposto bene, bravissimo!", "ענית היטב, כל הכבוד!"],
+            "Povero": ["Quel povero cane ha fame.", "הכלב המסכן ההוא רעב."],
+            "Cosa fai?": ["Cosa fai questo pomeriggio?", "מה את/ה עושה אחר הצהריים?"],
+            "Niente di speciale": ["Cosa hai fatto ieri? Niente di speciale.", "מה עשית אתמול? שום דבר מיוחד."],
+            "Mi piaci": ["Mi piaci perché sei sincero.", "את/ה מוצא/ת חן בעיניי כי את/ה כנה."],
+            "Senti": ["Senti, posso chiederti una cosa?", "תקשיב/י, אפשר לשאול אותך משהו?"],
+            "Guarda": ["Guarda quel bellissimo panorama.", "תסתכל/י על הנוף היפהפה הזה."],
+            "Basta": ["Basta, non voglio discutere.", "די, אני לא רוצה להתווכח."],
+            "Che c'è?": ["Sei triste, che c'è?", "את/ה עצוב/ה, מה קרה?"],
+            "Sto scherzando": ["Non arrabbiarti, sto scherzando.", "אל תכעס/י, אני צוחק/ת."],
+            "Davvero?": ["Hai incontrato il sindaco? Davvero?", "פגשת את ראש העיר? באמת?"],
+            "Sul serio": ["Parli sul serio?", "את/ה מדבר/ת ברצינות?"],
+            "Mi fa piacere": ["Mi fa piacere vederti.", "משמח אותי לראות אותך."],
+            "Beato te": ["Domani vai in vacanza? Beato te!", "מחר את/ה יוצא/ת לחופשה? כיף לך!"],
+            "Che macello!": ["Guarda questa stanza: che macello!", "תראה/י את החדר הזה: איזה בלגן!"],
+            "Tutto chiaro": ["Hai capito? Sì, tutto chiaro.", "הבנת? כן, הכול ברור."],
+            "Capisco": ["Capisco quello che vuoi dire.", "אני מבין/ה למה את/ה מתכוון/ת."],
+            "Permesso": ["Permesso, posso entrare?", "ברשותך, אפשר להיכנס?"],
+            "Scusa il ritardo": ["Scusa il ritardo, c'era traffico.", "סליחה על האיחור, היה פקק."],
+            "Che sorpresa!": ["Sei venuto anche tu? Che sorpresa!", "גם את/ה הגעת? איזו הפתעה!"],
+            "Mi sono dimenticato": ["Mi sono dimenticato le chiavi.", "שכחתי את המפתחות."],
+            "Ricordo": ["Ricordo bene quel giorno.", "אני זוכר/ת היטב את היום ההוא."],
+            "Nessuno": ["Non c'è nessuno in casa.", "אין אף אחד בבית."],
+            "Qualcuno": ["C'è qualcuno alla porta.", "יש מישהו בדלת."],
+            "Qualcosa": ["Vuoi mangiare qualcosa?", "את/ה רוצה לאכול משהו?"],
+            "Da solo": ["Preferisco viaggiare da solo.", "אני מעדיף/ה לטייל לבד."],
+            "Insieme": ["Studiamo italiano insieme.", "אנחנו לומדים איטלקית יחד."],
+            "Di nuovo": ["Puoi ripetere di nuovo?", "אפשר לחזור על זה שוב?"],
+            "Spesso": ["Vado spesso al mercato.", "אני הולך/ת לעיתים קרובות לשוק."],
+            "Raramente": ["Mangio raramente al ristorante.", "אני אוכל/ת לעיתים רחוקות במסעדה."],
+            "Finalmente": ["Finalmente siamo arrivati.", "סוף סוף הגענו."],
+            "All'improvviso": ["All'improvviso ha iniziato a piovere.", "פתאום התחיל לרדת גשם."],
+            "Sicuramente": ["Sicuramente verrò domani.", "בוודאות אבוא מחר."],
+            "Purtroppo": ["Purtroppo oggi non posso venire.", "לצערי היום איני יכול/ה לבוא."],
+            "Invece": ["Io prendo il tè, lei invece prende il caffè.", "אני לוקח/ת תה, והיא לעומת זאת לוקחת קפה."],
+            "Cioè": ["Arrivo alle otto, cioè tra un'ora.", "אגיע בשמונה, כלומר בעוד שעה."],
+            "Comunque": ["Comunque, grazie per l'aiuto.", "בכל אופן, תודה על העזרה."],
+            "Quasi": ["Ho quasi finito il lavoro.", "כמעט סיימתי את העבודה."],
+            "Soprattutto": ["Mi piace l'Italia, soprattutto Roma.", "אני אוהב/ת את איטליה, במיוחד את רומא."],
+            "Praticamente": ["Praticamente abbiamo finito.", "למעשה כמעט סיימנו."],
+            "Insomma": ["Insomma, com'è andata?", "בקיצור, איך היה?"],
+            "Secondo me": ["Secondo me, questo ristorante è ottimo.", "לדעתי, המסעדה הזאת מצוינת."],
+            "Hai ragione": ["Hai ragione, dobbiamo partire presto.", "את/ה צודק/ת, אנחנו צריכים לצאת מוקדם."],
+            "Hai torto": ["Mi dispiace, ma questa volta hai torto.", "מצטער/ת, אבל הפעם את/ה טועה."],
+            "Ti va?": ["Andiamo al cinema, ti va?", "נלך לקולנוע, מתאים לך?"],
+            "Non mi va": ["Stasera non mi va di uscire.", "הערב לא בא לי לצאת."],
+            "Che bello!": ["Domani andiamo al mare? Che bello!", "מחר נלך לים? איזה יופי!"],
+            "Che brutto!": ["Piove anche oggi, che brutto!", "יורד גשם גם היום, איזה מבאס!"],
+            "Mi raccomando": ["Mi raccomando, arriva in orario.", "שים/י לב, תגיע/י בזמן."],
+            "Fai attenzione": ["Fai attenzione quando attraversi la strada.", "היזהר/י כשאת/ה חוצה את הכביש."],
+            "Buon viaggio": ["Partite domani? Buon viaggio!", "אתם נוסעים מחר? נסיעה טובה!"],
+            "Divertiti": ["Vai alla festa? Divertiti!", "את/ה הולך/ת למסיבה? תיהנה/י!"],
+            "Saluti": ["Tanti saluti alla tua famiglia.", "מסור/י דרישת שלום למשפחה שלך."],
+            "Ci vediamo": ["Ci vediamo domani mattina.", "נתראה מחר בבוקר."],
+            "Fatti sentire": ["Quando arrivi, fatti sentire.", "כשתגיע/י, תיצור/י קשר."],
+            "Fammi sapere": ["Fammi sapere quando sei libero.", "תודיע/י לי מתי את/ה פנוי/ה."],
+            "Che tempo fa?": ["Che tempo fa oggi a Roma?", "מה מזג האוויר היום ברומא?"],
+            "Fa caldo": ["Oggi fa caldo, apriamo la finestra.", "היום חם, נפתח את החלון."],
+            "Fa freddo": ["Fuori fa freddo, prendi il cappotto.", "קר בחוץ, קח/י מעיל."],
+            "Piove": ["Piove, porto l'ombrello.", "יורד גשם, אקח מטרייה."],
+            "C'è il sole": ["Oggi c'è il sole e andiamo al mare.", "היום יש שמש ואנחנו הולכים לים."],
+            "Buon divertimento": ["Andate al concerto? Buon divertimento!", "אתם הולכים להופעה? בילוי נעים!"],
+            "Accomodati": ["Entra e accomodati sul divano.", "היכנס/י ושב/י בנוחות על הספה."],
+            "Fai con comodo": ["Non ho fretta, fai con comodo.", "אני לא ממהר/ת, קח/י את הזמן."],
+            "Sei pronto?": ["Sei pronto per partire?", "את/ה מוכן/ה לצאת?"],
+            "Sono pronto": ["Sono pronto, possiamo andare.", "אני מוכן/ה, אפשר ללכת."],
+            "Aspetta": ["Aspetta qui, torno subito.", "חכה/י כאן, אחזור מיד."],
+            "Vieni qui": ["Vieni qui un momento.", "בוא/י הנה לרגע."],
+            "Andiamo": ["È tardi, andiamo a casa.", "מאוחר, בואו נלך הביתה."],
+            "Muoviti": ["Muoviti, il treno parte tra cinque minuti.", "הזדרז/י, הרכבת יוצאת בעוד חמש דקות."],
+            "Dimmi": ["Dimmi cosa è successo.", "ספר/י לי מה קרה."],
+            "Chiedi": ["Chiedi al cameriere il conto.", "בקש/י מהמלצר את החשבון."],
+            "Rispondi": ["Rispondi alla domanda, per favore.", "ענה/י על השאלה, בבקשה."],
+            "Non ti preoccupare": ["Non ti preoccupare, andrà tutto bene.", "אל תדאג/י, הכול יהיה בסדר."],
+            "Tirati su": ["Tirati su, domani sarà meglio.", "תתעודד/י, מחר יהיה טוב יותר."],
+            "Tranquillo": ["Tranquillo, non c'è nessun problema.", "הירגע/י, אין שום בעיה."],
+            "Serio": ["È un problema serio.", "זו בעיה רצינית."],
+            "Simpatico": ["Il nuovo collega è molto simpatico.", "העמית החדש נחמד מאוד."],
+            "Antipatico": ["Quel cameriere è stato antipatico.", "המלצר ההוא היה לא נחמד."],
+            "Disponibile": ["Questa camera è disponibile.", "החדר הזה פנוי."],
+            "Occupato": ["Il bagno è occupato.", "השירותים תפוסים."],
+            "Libero": ["Sei libero domani sera?", "את/ה פנוי/ה מחר בערב?"],
+            "Nuovo": ["Ho comprato un telefono nuovo.", "קניתי טלפון חדש."],
+            "Vecchio": ["Questo edificio è molto vecchio.", "הבניין הזה ישן מאוד."],
+            "Grande": ["La nostra camera è grande.", "החדר שלנו גדול."],
+            "Piccolo": ["Vorrei un caffè piccolo.", "הייתי רוצה קפה קטן."],
+            "Alto": ["Quel ragazzo è molto alto.", "הבחור ההוא גבוה מאוד."],
+            "Basso": ["Il tavolo è troppo basso.", "השולחן נמוך מדי."],
+            "Lungo": ["È un viaggio molto lungo.", "זו נסיעה ארוכה מאוד."],
+            "Corto": ["Il film è corto ma interessante.", "הסרט קצר אבל מעניין."],
+            "Caro": ["Questo albergo è troppo caro.", "המלון הזה יקר מדי."],
+            "Economico": ["Cerco un ristorante economico.", "אני מחפש/ת מסעדה זולה."],
+            "Vicino": ["L'hotel è vicino alla stazione.", "המלון קרוב לתחנה."],
+            "Lontano": ["Il centro non è lontano.", "המרכז אינו רחוק."],
+            "Pieno": ["Il bicchiere è pieno d'acqua.", "הכוס מלאה במים."],
+            "Vuoto": ["Il frigorifero è vuoto.", "המקרר ריק."],
+            "Aperto": ["Il negozio è aperto fino alle otto.", "החנות פתוחה עד שמונה."],
+            "Chiuso": ["Oggi il museo è chiuso.", "היום המוזיאון סגור."],
+            "Caldo": ["Il caffè è ancora caldo.", "הקפה עדיין חם."],
+            "Freddo": ["L'acqua è troppo fredda.", "המים קרים מדי."],
+            "Pulito": ["Il bagno è pulito.", "חדר האמבטיה נקי."],
+            "Sporco": ["Il pavimento è sporco.", "הרצפה מלוכלכת."],
+            "Giusto": ["Questo è il numero giusto.", "זה המספר הנכון."],
+            "Sbagliato": ["Hai preso il treno sbagliato.", "עלית על הרכבת הלא נכונה."],
+            "Felice": ["Sono felice di vederti.", "אני שמח/ה לראות אותך."],
+            "Triste": ["Oggi mi sento un po' triste.", "היום אני מרגיש/ה קצת עצוב/ה."],
+            "Veloce": ["Questo treno è molto veloce.", "הרכבת הזאת מהירה מאוד."],
+            "Lento": ["Il servizio è un po' lento.", "השירות קצת איטי."],
+            "Forte": ["Il vento è molto forte.", "הרוח חזקה מאוד."],
+            "Debole": ["Il segnale è debole.", "הקליטה חלשה."],
+            "Ottimo": ["Questo vino è ottimo.", "היין הזה מצוין."],
+            "Pessimo": ["Il servizio è stato pessimo.", "השירות היה גרוע ביותר."],
+            "Importante": ["È importante arrivare in orario.", "חשוב להגיע בזמן."],
+            "Inutile": ["Discutere adesso è inutile.", "להתווכח עכשיו זה חסר תועלת."],
+            "Interessante": ["Il libro è molto interessante.", "הספר מעניין מאוד."],
+            "Noioso": ["Il film era noioso.", "הסרט היה משעמם."],
+            "Difficile": ["Questa domanda è difficile.", "השאלה הזאת קשה."],
+            "Sicuro": ["Questo quartiere è sicuro.", "השכונה הזאת בטוחה."],
+            "Pericoloso": ["È pericoloso attraversare qui.", "מסוכן לחצות כאן."],
+            "Chiaro": ["Il tuo messaggio è chiaro.", "המסר שלך ברור."],
+            "Scuro": ["Preferisco il colore scuro.", "אני מעדיף/ה את הצבע הכהה."],
+            "Diverso": ["Questo modello è diverso dall'altro.", "הדגם הזה שונה מהאחר."],
+            "Uguale": ["Il mio vestito è uguale al tuo.", "השמלה שלי זהה לשלך."],
+            "Simile": ["Questi due prodotti sono simili.", "שני המוצרים האלה דומים."],
+            "Solito": ["Prendo il solito caffè.", "אקח את הקפה הרגיל."],
+            "Strano": ["Ho sentito un rumore strano.", "שמעתי רעש מוזר."],
+            "Normale": ["È normale sentirsi stanchi.", "זה נורמלי להרגיש עייפים."],
+            "Speciale": ["Oggi è un giorno speciale.", "היום הוא יום מיוחד."]
+
+        };
+
+        function normalizeWord(word) {
+            return (word || '').replace(/\s*\([^)]*\)\s*/g, '').trim();
+        }
+
+        function firstHebrewMeaning(text) {
+            return (text || '').split('/')[0].trim();
+        }
+
+        function getWordIndex(item) {
+            const index = originalWordList.findIndex(wordItem => wordItem.it === item.it);
+            return index >= 0 ? index : 0;
+        }
+
+        function italianArticle(word) {
+            const clean = normalizeWord(word).toLowerCase();
+            if (/^(z|gn|ps|pn|x|y|s[^aeiou])/.test(clean)) return "uno";
+            if (/^[aeiou]/.test(clean)) return "un'";
+            if (/[aà]$/.test(clean)) return "una";
+            return "un";
+        }
+
+        function buildExample(item) {
+            if (!item) return { it: '', he: '' };
+            if (item.exampleIt && item.exampleHe) {
+                return { it: item.exampleIt, he: item.exampleHe };
+            }
+            if (customExamples[item.it]) {
+                return { it: customExamples[item.it][0], he: customExamples[item.it][1] };
+            }
+
+            const word = normalizeWord(item.it);
+            const lower = word.charAt(0).toLowerCase() + word.slice(1);
+            const he = firstHebrewMeaning(item.he);
+            const exampleNumber = getWordIndex(item);
+
+            if (/[?!]$/.test(word)) {
+                const questionContexts = [
+                    [`Al ristorante chiedo: “${word}”`, `במסעדה אני שואל/ת: „${item.he}”`],
+                    [`Durante la conversazione domando: “${word}”`, `במהלך השיחה אני שואל/ת: „${item.he}”`],
+                    [`Quando ho un dubbio, dico: “${word}”`, `כשיש לי ספק אני אומר/ת: „${item.he}”`],
+                    [`Per avere più informazioni chiedo: “${word}”`, `כדי לקבל מידע נוסף אני שואל/ת: „${item.he}”`]
+                ];
+                const selected = questionContexts[exampleNumber % questionContexts.length];
+                return { it: selected[0], he: selected[1] };
+            }
+
+            if (/\s/.test(word)) {
+                const phraseContexts = [
+                    [`Quando incontro un amico, posso dire: “${word}”.`, `כשאני פוגש/ת חבר, אפשר לומר: „${item.he}”.`],
+                    [`In questa situazione la risposta naturale è: “${word}”.`, `במצב הזה התשובה הטבעית היא: „${item.he}”.`],
+                    [`Nel dialogo sentiamo la frase: “${word}”.`, `בדיאלוג שומעים את המשפט: „${item.he}”.`],
+                    [`Per rispondere in modo semplice dico: “${word}”.`, `כדי לענות בפשטות אני אומר/ת: „${item.he}”.`],
+                    [`Questa espressione è utile: “${word}”.`, `הביטוי הזה שימושי: „${item.he}”.`],
+                    [`Al negozio posso usare la frase: “${word}”.`, `בחנות אפשר להשתמש במשפט: „${item.he}”.`],
+                    [`Parlando con un italiano, posso dire: “${word}”.`, `בשיחה עם איטלקי אפשר לומר: „${item.he}”.`],
+                    [`La frase completa è: “${word}”.`, `המשפט המלא הוא: „${item.he}”.`]
+                ];
+                const selected = phraseContexts[exampleNumber % phraseContexts.length];
+                return { it: selected[0], he: selected[1] };
+            }
+
+            if (/(are|ere|ire)$/.test(lower)) {
+                const verbExamples = [
+                    [`Voglio ${lower} prima di cena.`, `אני רוצה ${he} לפני ארוחת הערב.`],
+                    [`È importante ${lower} con calma.`, `חשוב ${he} ברוגע.`],
+                    [`Devo ${lower} entro domani.`, `אני חייב/ת ${he} עד מחר.`],
+                    [`Preferisco ${lower} la mattina.`, `אני מעדיפ/ה ${he} בבוקר.`],
+                    [`Possiamo ${lower} insieme.`, `אנחנו יכולים ${he} יחד.`],
+                    [`Cerco di ${lower} ogni giorno.`, `אני משתדל/ת ${he} בכל יום.`],
+                    [`Mi piace ${lower} nel tempo libero.`, `אני אוהב/ת ${he} בזמן הפנוי.`],
+                    [`Prima di tutto bisogna ${lower}.`, `קודם כול צריך ${he}.`]
+                ];
+                const selected = verbExamples[exampleNumber % verbExamples.length];
+                return { it: selected[0], he: selected[1] };
+            }
+
+            if (pluralAdjectives.has(word)) {
+                const pluralExamples = [
+                    [`Questi prodotti sono ${lower}.`, `המוצרים האלה ${he}.`],
+                    [`I due modelli sembrano ${lower}.`, `שני הדגמים נראים ${he}.`],
+                    [`Abbiamo scelto colori ${lower}.`, `בחרנו צבעים ${he}.`],
+                    [`Le risposte sono ${lower}.`, `התשובות ${he}.`]
+                ];
+                const selected = pluralExamples[exampleNumber % pluralExamples.length];
+                return { it: selected[0], he: selected[1] };
+            }
+
+            if (adjectiveWords.has(word)) {
+                const adjectiveExamples = [
+                    [`Questo posto è molto ${lower}.`, `המקום הזה מאוד ${he}.`],
+                    [`Il film sembra ${lower}.`, `הסרט נראה ${he}.`],
+                    [`Per me questo è ${lower}.`, `בעיניי זה ${he}.`],
+                    [`Il risultato è davvero ${lower}.`, `התוצאה באמת ${he}.`],
+                    [`Oggi mi sento ${lower}.`, `היום אני מרגיש/ה ${he}.`],
+                    [`Questo modello è più ${lower} dell'altro.`, `הדגם הזה יותר ${he} מהאחר.`],
+                    [`Il quartiere è abbastanza ${lower}.`, `השכונה די ${he}.`],
+                    [`La situazione diventa ${lower}.`, `המצב נעשה ${he}.`]
+                ];
+                const selected = adjectiveExamples[exampleNumber % adjectiveExamples.length];
+                return { it: selected[0], he: selected[1] };
+            }
+
+            // כל המילים אמורות לקבל דוגמה ייעודית ב-customExamples.
+            // זהו גיבוי בטוח בלבד, כדי שלא ייווצר משפט שגוי דקדוקית.
+            return {
+                it: `In italiano usiamo la parola “${word}” in questo contesto.`,
+                he: `באיטלקית משתמשים במילה „${item.it}” בהקשר הזה.`
+            };
+        }
+
+        function mergeSavedQueue(savedItems) {
+            const currentByWord = new Map(originalWordList.map(item => [item.it, item]));
+            const merged = [];
+            const seen = new Set();
+
+            for (const savedItem of savedItems || []) {
+                const currentItem = currentByWord.get(savedItem.it);
+                if (currentItem && !seen.has(currentItem.it)) {
+                    merged.push(currentItem);
+                    seen.add(currentItem.it);
+                }
+            }
+
+            for (const item of originalWordList) {
+                if (!seen.has(item.it)) merged.push(item);
+            }
+
+            return merged;
+        }
+
+        function loadSavedState() {
+            try {
+                const savedQueue = localStorage.getItem('italian_flashcards_queue');
+                const savedIdx = localStorage.getItem('italian_flashcards_idx');
+
+                if (savedQueue) {
+                    queue = mergeSavedQueue(JSON.parse(savedQueue));
+                    idx = savedIdx ? parseInt(savedIdx, 10) : 0;
+                    if (idx >= queue.length || isNaN(idx)) idx = 0;
+                    showStatusMessage("ההתקדמות נטענה והמילים החדשות נוספו!");
+                } else {
+                    queue = [...originalWordList];
+                    idx = 0;
+                }
+            } catch (e) {
+                queue = [...originalWordList];
+                idx = 0;
+            }
+        }
+
+        function saveCurrentState() {
+            try {
+                localStorage.setItem('italian_flashcards_queue', JSON.stringify(queue));
+                localStorage.setItem('italian_flashcards_idx', idx);
+            } catch (e) {}
+        }
+
+        function showStatusMessage(text) {
+            const statusDiv = document.getElementById('save-status');
+            if (statusDiv) {
+                statusDiv.innerText = text;
+                setTimeout(() => { statusDiv.innerText = ''; }, 3000);
+            }
+        }
+
+        function update() {
+            if (queue.length === 0) return;
+
+            const totalWords = originalWordList.length;
+            document.getElementById('app-title').innerText = `${totalWords} מילים וביטויים באיטלקית`;
+            document.title = `איטלקית בכיף - ${totalWords} מילים`;
+
+            document.getElementById('word-it').innerText = queue[idx].it || '';
+            document.getElementById('word-he').innerText = queue[idx].he || '';
+            document.getElementById('word-en').innerText = queue[idx].en || '';
+            document.getElementById('counter').innerText = `מילה ${idx + 1} מתוך ${queue.length}`;
+
+            const hintBox = document.getElementById('hint-box');
+            hintBox.style.display = 'none';
+            hintBox.innerText = '';
+
+            const exampleBox = document.getElementById('example-box');
+            exampleBox.style.display = 'none';
+            exampleBox.innerHTML = '';
+
+            saveCurrentState();
+        }
+
+        function toggleFlip() {
+            document.getElementById('card').classList.toggle('flipped');
+        }
+
+        function nextCard() {
+            document.getElementById('card').classList.remove('flipped');
+            setTimeout(() => { idx = (idx + 1) % queue.length; update(); }, 150);
+        }
+
+        function prevCard() {
+            document.getElementById('card').classList.remove('flipped');
+            setTimeout(() => { idx = (idx - 1 + queue.length) % queue.length; update(); }, 150);
+        }
+
+        function markAsForgot() {
+            if (queue.length <= 1) {
+                alert("נשארה רק מילה אחת בתור!");
+                return;
+            }
+            const item = queue.splice(idx, 1)[0];
+            queue.push(item);
+
+            showStatusMessage("המילה הועברה לסוף התור ותישמר!");
+            document.getElementById('card').classList.remove('flipped');
+            setTimeout(() => {
+                if (idx >= queue.length) idx = 0;
+                update();
+            }, 150);
+        }
+
+        function speakItalian(text) {
+            if (!text) return;
+            speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'it-IT';
+            utterance.rate = 0.9;
+            speechSynthesis.speak(utterance);
+        }
+
+        function playAudio(e) {
+            e.stopPropagation();
+            if (!queue[idx]) return;
+            speakItalian(normalizeWord(queue[idx].it));
+        }
+
+        function playExampleAudio(e) {
+            e.stopPropagation();
+            const example = buildExample(queue[idx]);
+            speakItalian(example.it);
+        }
+
+        function handleHint(e) {
+            e.stopPropagation();
+            const hintBox = document.getElementById('hint-box');
+            const currentWord = queue[idx];
+            if (!currentWord) return;
+
+            if (hintBox.style.display === 'block') {
+                hintBox.style.display = 'none';
+                return;
+            }
+
+            if (currentWord.hook) {
+                hintBox.innerText = currentWord.hook;
+                hintBox.style.display = 'block';
+            } else {
+                hintBox.innerText = `נסי לקשר את “${currentWord.it}” לצליל, תמונה או סיפור קצר שמזכיר לך את המשמעות: ${currentWord.he}.`;
+                hintBox.style.display = 'block';
+            }
+        }
+
+        function handleExample(e) {
+            e.stopPropagation();
+            const exampleBox = document.getElementById('example-box');
+
+            if (exampleBox.style.display === 'block') {
+                exampleBox.style.display = 'none';
+                return;
+            }
+
+            const example = buildExample(queue[idx]);
+            exampleBox.innerHTML = `
+                <div class="example-it">${example.it}</div>
+                <div class="example-he">${example.he}</div>
+                <div class="example-actions">
+                    <button class="btn-action" onclick="playExampleAudio(event)">🔊 השמע משפט</button>
+                </div>
+            `;
+            exampleBox.style.display = 'block';
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function resetApp() {
+            if (confirm(`האם לאפס הכל ולערבב את כל ${originalWordList.length} המילים מחדש?`)) {
+                try {
+                    localStorage.removeItem('italian_flashcards_queue');
+                    localStorage.removeItem('italian_flashcards_idx');
+                } catch(e) {}
+                queue = shuffleArray([...originalWordList]);
+                idx = 0;
+                update();
+                showStatusMessage("האפליקציה אותחלה ועורבבה מחדש!");
+            }
+        }
+
+        window.onload = function() {
+            loadSavedState();
+            if (!localStorage.getItem('italian_flashcards_queue')) {
+                queue = shuffleArray(queue);
+            }
+            update();
+        };
+    </script>
+</body>
+</html>
